@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="Problems-Move_the_first_N_characters_main" target="11" />
+      <module name="Problems-Move_the_first_N_characters_test" target="11" />
+      <module name="Problems-The_percentage_of_G_and_C_characters_main" target="11" />
+      <module name="Problems-The_percentage_of_G_and_C_characters_test" target="11" />
+      <module name="Readability_Score-task_main" target="11" />
+      <module name="Readability_Score-task_test" target="11" />
+      <module name="util_main" target="11" />
+      <module name="util_test" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
