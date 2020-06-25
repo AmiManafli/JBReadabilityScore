@@ -1,10 +1,11 @@
 package readability;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class Main {
@@ -12,30 +13,15 @@ public class Main {
     static String sentenceEnd = "[.!?]\\s|[.!?]\\p{Blank}|[.!?]\\p{Space}";
     static HashMap<Integer, String> readabilityScores = new HashMap<Integer, String>();
 
-    static int sentenceCount;
-    static int wordCount;
-    static int charCount;
-    static int syllableCount;
-    static int polysyllableCount;
-
-    static double scoreAutomated;
-    static double scoreFK;
-    static double scoreSMOG;
-    static double scoreCL;
-
-    enum ScoreShow {
-        ARI, FK, SMOG, CL, ALL,
-    }
-
-    private static ScoreShow score;
-
     public static String readFileAsString(String fileName) throws IOException {
         return new String(Files.readAllBytes(Paths.get(fileName)));
     }
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+//        String filePath = "dataset_91022.txt";
         String filePath = args[0];
+
         File file = new File(filePath);
         String text = "";
         try {
@@ -43,76 +29,73 @@ public class Main {
         } catch (IOException e) {
             System.out.println("Cannot read file: " + filePath);
         }
+        TextStats textStats = new TextStats(text);
         hashmapReadabilityScoresInit();
-        analyzeText(text);
-        showTextStats(text);
+        analyzeText(textStats);
+        showTextStats(textStats);
         System.out.println("Enter the score you want to calculate" +
                 "(ARI, FK, SMOG, CL, all):");
         String scoreType = scanner.nextLine();
-        calculateScore(scoreType);
-        showReadabilityScores();
+        calculateScore(scoreType, textStats);
+        showReadabilityScores(textStats);
     }
 
-    private static void showReadabilityScores() {
+    private static void showReadabilityScores(TextStats textStats) {
         String ageRange = "";
         System.out.println();
-        if (score == ScoreShow.ARI || score == ScoreShow.ALL) {
-            ageRange = readabilityScores.get((int) Math.round(scoreAutomated));
+        if (textStats.scoreAutomated.isPresent()) {
             System.out.printf("Automated Readability Index: %.2f (about %s year olds).\n",
-                    scoreAutomated, ageRange);
+                    textStats.scoreAutomated.get(), getAgeRange(textStats.scoreAutomated));
         }
-        if (score == ScoreShow.FK || score == ScoreShow.ALL) {
-            ageRange = readabilityScores.get((int) Math.round(scoreFK));
+        if (textStats.scoreFK.isPresent()) {
             System.out.printf("Flesch–Kincaid readability tests: %.2f (about %s year olds).\n",
-                    scoreFK, ageRange);
+                    textStats.scoreFK.get(), getAgeRange(textStats.scoreFK));
         }
-        if (score == ScoreShow.SMOG || score == ScoreShow.ALL) {
-            ageRange = readabilityScores.get((int) Math.round(scoreSMOG));
+        if (textStats.scoreSMOG.isPresent()) {
             System.out.printf("Simple Measure of Gobbledygook: %.2f (about %s year olds).\n",
-                    scoreSMOG, ageRange);
+                    textStats.scoreSMOG.get(), getAgeRange(textStats.scoreSMOG));
         }
-        if (score == ScoreShow.CL || score == ScoreShow.ALL) {
-            ageRange = readabilityScores.get((int) Math.round(scoreCL));
+        if (textStats.scoreCL.isPresent()) {
             System.out.printf("Coleman–Liau index: %.2f (about %s year olds).\n",
-                    scoreCL, ageRange);
+                    textStats.scoreCL.get(), getAgeRange(textStats.scoreCL));
         }
     }
 
-    private static void calculateScore(String scoreType) {
+    private static String getAgeRange(Optional<Double> score) {
+        return readabilityScores.get((int) Math.round(score.get()));
+    }
+
+    private static void calculateScore(String scoreType, TextStats textStats) {
         switch (scoreType) {
             case "ARI":
-                scoreAutomated = automatedReadabilityScore();
-                score = ScoreShow.ARI;
+                textStats.scoreAutomated = Optional.of(automatedReadabilityScore(textStats));
                 break;
             case "FK":
-                scoreFK = fleschKincaidReadabilityScore();
-                score = ScoreShow.FK;
+                textStats.scoreFK = Optional.of(fleschKincaidReadabilityScore(textStats));
                 break;
             case "SMOG":
-                scoreSMOG = SMOGReadabilityScore();
-                score = ScoreShow.SMOG;
+                textStats.scoreSMOG = Optional.of(SMOGReadabilityScore(textStats));
                 break;
             case "CL":
-                scoreCL = colemanLiauReadabilityScore();
-                score = ScoreShow.CL;
+                textStats.scoreCL = Optional.of(colemanLiauReadabilityScore(textStats));
                 break;
             case "all":
-                scoreAutomated = automatedReadabilityScore();
-                scoreFK = fleschKincaidReadabilityScore();
-                scoreSMOG = SMOGReadabilityScore();
-                scoreCL = colemanLiauReadabilityScore();
-                score = ScoreShow.ALL;
+                textStats.scoreAutomated = Optional.of(automatedReadabilityScore(textStats));
+                textStats.scoreFK = Optional.of(fleschKincaidReadabilityScore(textStats));
+                textStats.scoreSMOG = Optional.of(SMOGReadabilityScore(textStats));
+                textStats.scoreCL = Optional.of(colemanLiauReadabilityScore(textStats));
                 break;
             default:
                 break;
         }
     }
 
-    private static void showTextStats(String text) {
-        System.out.println("The text is:\n" + text + "\n");
+    private static void showTextStats(TextStats textStats) {
+        System.out.println("The text is:\n" + textStats.text + "\n");
         System.out.printf("Words: %d\nSentences: %d\nCharacters: %d\n" +
                         "Syllables: %d\nPolysyllables: %d\n",
-                wordCount, sentenceCount, charCount, syllableCount, polysyllableCount);
+                textStats.wordCount, textStats.sentenceCount, textStats.charCount,
+                textStats.syllableCount, textStats.polysyllableCount);
     }
 
     private static void hashmapReadabilityScoresInit() {
@@ -132,50 +115,51 @@ public class Main {
         readabilityScores.put(14, "25+");
     }
 
-    private static double automatedReadabilityScore() {
+    private static double automatedReadabilityScore(TextStats textStats) {
         try {
-            return (4.71 * ((double) charCount / wordCount) +
-                    0.5 * ((double) wordCount / sentenceCount) - 21.43);
+            return (4.71 * ((double) textStats.charCount / textStats.wordCount) +
+                    0.5 * ((double) textStats.wordCount / textStats.sentenceCount) - 21.43);
         } catch (ArithmeticException e) {
             System.out.println("Division by zero");
         }
         return 0;
     }
 
-    private static double colemanLiauReadabilityScore() {
-        return 0.0588 * ((double) charCount * 100 / wordCount) - 0.296 * ((double) sentenceCount * 100 / wordCount) -
+    private static double colemanLiauReadabilityScore(TextStats textStats) {
+        return 0.0588 * ((double) textStats.charCount * 100 / textStats.wordCount) -
+                0.296 * ((double) textStats.sentenceCount * 100 / textStats.wordCount) -
                 15.8;
     }
 
-    private static double SMOGReadabilityScore() {
-        return 1.043 * Math.sqrt((double) polysyllableCount * 30 / sentenceCount)
-                + 3.1291;
+    private static double SMOGReadabilityScore(TextStats textStats) {
+        return 1.043 * Math.sqrt((double) textStats.polysyllableCount * 30 /
+                textStats.sentenceCount) + 3.1291;
     }
 
-    private static double fleschKincaidReadabilityScore() {
-        return (0.39 * (double) wordCount / sentenceCount +
-                11.8 * (double) syllableCount / wordCount - 15.59);
+    private static double fleschKincaidReadabilityScore(TextStats textStats) {
+        return (0.39 * (double) textStats.wordCount / textStats.sentenceCount +
+                11.8 * (double) textStats.syllableCount / textStats.wordCount - 15.59);
     }
 
-    private static void analyzeText(String text) {
-        String[] sentences = text.split(sentenceEnd);
+    private static void analyzeText(TextStats textStats) {
+        String[] sentences = textStats.text.split(sentenceEnd);
         for (String sentence : sentences) {
             sentence = sentence.replaceAll("[^a-zA-Z0-9\\s]", "");
-            wordCount += analyzeSentence(sentence);
+            textStats.wordCount += analyzeSentence(sentence, textStats);
         }
-        charCount = getCharCount(text);
-        sentenceCount = sentences.length;
+        textStats.charCount = getCharCount(textStats);
+        textStats.sentenceCount = sentences.length;
     }
 
-    private static int analyzeSentence(String sentence) {
+    private static int analyzeSentence(String sentence, TextStats textStats) {
         String[] words = sentence.split(wordEnd);
         for (String word : words) {
-            syllableCount += analyzeWord(word);
+            textStats.syllableCount += analyzeWord(word, textStats);
         }
         return words.length;
     }
 
-    private static int analyzeWord(String word) {
+    private static int analyzeWord(String word, TextStats textStats) {
         int syllableCount = 0;
         for (int i = 0; i < word.length(); i++) {
             char ch = word.charAt(i);
@@ -186,7 +170,7 @@ public class Main {
             }
         }
         if (syllableCount > 2) {
-            polysyllableCount++;
+            textStats.polysyllableCount++;
         }
         return syllableCount > 0 ? syllableCount : 1;
     }
@@ -200,8 +184,8 @@ public class Main {
         return false;
     }
 
-    private static int getCharCount(String text) {
-        String newText = text.replace(" ", "");
+    private static int getCharCount(TextStats textStats) {
+        String newText = textStats.text.replace(" ", "");
         return newText.length();
     }
 }

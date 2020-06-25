@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="ReadabilityTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2020-06-25T14:23:10" hostname="DESKTOP-VKJNB1L" time="0.596">
+<testsuite name="ReadabilityTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2020-06-25T17:38:10" hostname="DESKTOP-VKJNB1L" time="0.326">
   <properties/>
-  <testcase name="start" classname="ReadabilityTest" time="0.596"/>
+  <testcase name="start" classname="ReadabilityTest" time="0.326"/>
   <system-out><![CDATA[?[1;31m
 Start test 1?[0m
 The text is:
